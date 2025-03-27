@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 
 # Define variables
 x = sp.symbols('x')
-f1 = sp.sin(x)  # First curve: y = sin(x)
-f2 = sp.cos(x)  # Second curve: y = cos(x)
+f1 = x ** 3  # First curve: y = sin(x)
+f2 = x ** 2  # Second curve: y = cos(x)
 
 # Solve for intersection points (f1 = f2)
 intersection_points = sp.solve(f1 - f2, x)
