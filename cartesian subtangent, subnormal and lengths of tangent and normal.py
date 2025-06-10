@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import sympy as sp
+import pandas as pd
 
 # Define the variable and the curve
 x_sym = sp.Symbol('x')
@@ -76,4 +77,138 @@ plt.ylabel('y')
 plt.title(f'Geometric Properties of the Curve y = x^3 at a Specific Point')
 plt.legend()
 plt.grid()
+# Prepare intermediate values for the table
+data = {
+    'Property': [
+        'x_point',
+        'y_point',
+        'dy_dx_point',
+        'Subtangent',
+        'Subnormal',
+        'Length of Tangent',
+        'Length of Normal'
+    ],
+    'Value': [
+        x_point,
+        y_point,
+        dy_dx_point,
+        subtangent_val,
+        subnormal_val,
+        tangent_length_val,
+        normal_length_val
+    ]
+}
+
+df = pd.DataFrame(data)
+print("\nCalculated Intermediate Values:")
+print(df.to_string(index=False))
+
+plt.show()
+# Calculate geometric properties for various angles (theta)
+# For y = x^3, the angle theta is the angle of the tangent with the x-axis: tan(theta) = dy/dx
+
+angles_deg = np.arange(0, 7200, 10)  # 0 to 7200 degrees in steps of 10
+results = {
+    'Angle (deg)': [],
+    'x_point': [],
+    'y_point': [],
+    'dy/dx': [],
+    'Subtangent': [],
+    'Subnormal': [],
+    'Length of Tangent': [],
+    'Length of Normal': []
+}
+
+for angle in angles_deg:
+    theta_rad = np.deg2rad(angle)
+    # dy/dx = tan(theta)
+    if angle == 90:
+        continue  # dy/dx is infinite, skip vertical tangent
+    dy_dx_val = np.tan(theta_rad)
+    # For y = x^3, dy/dx = 3x^2 => x = sqrt(dy/dx / 3)
+    if dy_dx_val < 0:
+        continue  # x would be imaginary for negative slopes
+    x_val = np.sqrt(dy_dx_val / 3) if dy_dx_val != 0 else 0
+    y_val = x_val ** 3
+
+    # Subtangent = y / (dy/dx)
+    subtangent = y_val / dy_dx_val if dy_dx_val != 0 else np.nan
+    # Subnormal = y * dy/dx
+    subnormal = y_val * dy_dx_val
+    # Length of tangent = y * sqrt(1 + (1/(dy/dx)^2))
+    tangent_length = y_val * np.sqrt(1 + (1 / dy_dx_val ** 2)) if dy_dx_val != 0 else np.nan
+    # Length of normal = y * sqrt(1 + (dy/dx)^2)
+    normal_length = y_val * np.sqrt(1 + dy_dx_val ** 2)
+
+    results['Angle (deg)'].append(angle)
+    results['x_point'].append(x_val)
+    results['y_point'].append(y_val)
+    results['dy/dx'].append(dy_dx_val)
+    results['Subtangent'].append(subtangent)
+    results['Subnormal'].append(subnormal)
+    results['Length of Tangent'].append(tangent_length)
+    results['Length of Normal'].append(normal_length)
+
+# Show the table
+df_angles = pd.DataFrame(results)
+print("\nGeometric Properties at Various Tangent Angles:")
+print(df_angles.to_string(index=False))
+import matplotlib.animation as animation
+
+fig, ax = plt.subplots(figsize=(10, 10))
+
+def animate(i):
+    ax.clear()
+    # Plot the curve
+    ax.plot(x_vals_curve, y_vals_curve, label='Curve: y = x^3', color='black', linestyle='--')
+    # Get current values
+    angle = df_angles['Angle (deg)'][i]
+    x_val = df_angles['x_point'][i]
+    y_val = df_angles['y_point'][i]
+    dy_dx_val = df_angles['dy/dx'][i]
+    subtangent = df_angles['Subtangent'][i]
+    subnormal = df_angles['Subnormal'][i]
+    tangent_length = df_angles['Length of Tangent'][i]
+    normal_length = df_angles['Length of Normal'][i]
+
+    # Plot the specific point
+    ax.scatter(x_val, y_val, color='red', label=f'Point: ({x_val:.2f}, {y_val:.2f})')
+
+    # Tangent and normal lines
+    if dy_dx_val != 0:
+        tangent_x = np.linspace(x_val - 1, x_val + 1, 100)
+        tangent_y = dy_dx_val * (tangent_x - x_val) + y_val
+        ax.plot(tangent_x, tangent_y, color='orange', label='Tangent')
+        normal_slope = -1 / dy_dx_val
+        normal_x = np.linspace(x_val - 1, x_val + 1, 100)
+        normal_y = normal_slope * (normal_x - x_val) + y_val
+        ax.plot(normal_x, normal_y, color='purple', label='Normal')
+    else:
+        # Vertical tangent
+        ax.axvline(x_val, color='orange', label='Tangent')
+        ax.axhline(y_val, color='purple', label='Normal')
+
+    # Subtangent (horizontal arrow)
+    if not np.isnan(subtangent):
+        ax.arrow(x_val, y_val, subtangent, 0, color='blue', head_width=0.1, length_includes_head=True)
+        ax.text(x_val + subtangent/2, y_val + 0.5, 'Subtangent', color='blue')
+
+    # Subnormal (vertical arrow)
+    ax.arrow(x_val, y_val, 0, -subnormal, color='green', head_width=0.1, length_includes_head=True)
+    ax.text(x_val + 0.1, y_val - subnormal/2, 'Subnormal', color='green')
+
+    # Annotate lengths
+    ax.text(x_val, y_val + 1, f'Angle: {angle}°', fontsize=12, color='black')
+    ax.text(x_val, y_val + 0.5, f'Tangent Length: {tangent_length:.2f}', color='orange')
+    ax.text(x_val, y_val + 0.2, f'Normal Length: {normal_length:.2f}', color='purple')
+
+    ax.set_xlim(-1, 3)
+    ax.set_ylim(-2, 10)
+    ax.set_xlabel('x')
+    ax.set_ylabel('y')
+    ax.set_title('Geometric Properties at Various Tangent Angles')
+    ax.legend()
+    ax.grid()
+
+ani = animation.FuncAnimation(fig, animate, frames=len(df_angles), interval=1000, repeat=True)
 plt.show()
